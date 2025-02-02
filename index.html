@@ -46,32 +46,34 @@
       color: white;
     }
   </style>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1Y9H6FYF6G"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1Y9H6FYF6G');
+  </script>
 </head>
 <body class="bg-black bg-gradient-to-tr from-[#2d4eff33] to-[#8220ff33] h-screen flex flex-col items-center justify-center">
-
   <h1 class="text-white text-3xl font-bold mb-4" id="pageTitle">Promo Code Redemption</h1>
-
   <div id="loginSection">
     <div id="promoCodeSection" style="display: none;">
       <input type="text" id="promoCode" class="input-box mb-3" placeholder="Promo Code">
       <button onclick="redeemPromo()" class="bg-purple-600 text-white px-4 py-2 rounded-lg" id="redeemButton">Redeem</button>
     </div>
   </div>
-
   <div id="registerSection">
     <button onclick="register()" class="bg-blue-600 text-white px-4 py-2 rounded-lg mt-4" id="registerButton">Register</button>
   </div>
-
   <div id="inventorySection" style="display:none;">
     <h2 class="text-white text-xl font-bold mb-4">Inventory</h2>
     <div id="inventoryList"></div>
     <button onclick="goBackToHome()" class="bg-gray-600 text-white px-4 py-2 rounded-lg mt-4">Back to Home</button>
   </div>
-
   <p id="message" class="text-white mt-3"></p>
-
   <button onclick="goToInventory()" class="bg-green-600 text-white px-4 py-2 rounded-lg mt-3" id="inventoryButton" style="position: absolute; top: 20px; right: 20px; display:none;">Inventory</button>
-
   <script>
     // Пример кодов с количеством использования
     const promoCodes = {
@@ -79,7 +81,6 @@
       "NEWYEAR2025": { reward: "NEWYEAR2025 Iteam", usageLimit: 100, imageUrl: "https://cdn-business.nikkei.com/atcl/gen/19/00694/s1280.jpg?__scale=w:1280,h:720&_sh=08305905b0" },
       "Played Squid Game": { reward: "Squid Game Iteam", usageLimit: 100, imageUrl: "https://i.scdn.co/image/ab67616d00001e0249aa2d1cc2d74de6a5d4b83b" }
     };
-
     // Проверка, был ли зарегистрирован пользователь
     if (localStorage.getItem("username")) {
       const username = localStorage.getItem("username");
@@ -89,7 +90,6 @@
       document.getElementById("inventoryButton").style.display = "block"; // Показать кнопку инвентаря
       document.getElementById("promoCodeSection").style.display = "block"; // Показать форму для кода
     }
-
     // Регистрация пользователя
     function register() {
       const username = prompt("Enter a username to register:");
@@ -106,31 +106,26 @@
         }
       }
     }
-
     // Функция для ввода промокода
     function redeemPromo() {
       const promoCode = document.getElementById("promoCode").value.trim();
       const message = document.getElementById("message");
-
       const username = localStorage.getItem("username");
       if (!username) {
         message.textContent = "Please register first to use promo codes.";
         message.style.color = "red";
         return;
       }
-
       if (!promoCode) {
         message.textContent = "Please enter a promo code.";
         message.style.color = "red";
         return;
       }
-
       const codeDetails = promoCodes[promoCode];
       if (codeDetails) {
         // Проверка на количество использований
         let usedTimes = localStorage.getItem(promoCode) || 0;
         usedTimes = parseInt(usedTimes);
-
         if (usedTimes < codeDetails.usageLimit) {
           // Успешное использование промокода
           localStorage.setItem(promoCode, usedTimes + 1);
@@ -146,7 +141,6 @@
         message.style.color = "red";
       }
     }
-
     // Переключение между страницами
     function goToInventory() {
       const username = localStorage.getItem("username");
@@ -160,7 +154,6 @@
       document.getElementById("inventoryButton").style.display = "none"; // скрыть кнопку инвентаря
       displayInventory();
     }
-
     // Возврат на главную страницу (не выход из аккаунта)
     function goBackToHome() {
       document.getElementById("inventorySection").style.display = "none";
@@ -169,7 +162,6 @@
       document.getElementById("inventoryButton").style.display = "block"; // показать кнопку инвентаря
       document.getElementById("promoCodeSection").style.display = "block"; // показать форму для кода
     }
-
     // Добавление предметов в инвентарь
     function addToInventory(item, imageUrl) {
       const username = localStorage.getItem("username");
@@ -177,29 +169,23 @@
       inventory.push({ item, imageUrl });
       localStorage.setItem(username + "_inventory", JSON.stringify(inventory));
     }
-
     // Отображение инвентаря
     function displayInventory() {
       const inventoryList = document.getElementById("inventoryList");
       const username = localStorage.getItem("username");
       const inventory = JSON.parse(localStorage.getItem(username + "_inventory")) || [];
       inventoryList.innerHTML = "";
-
       if (inventory.length === 0) {
         inventoryList.innerHTML = `<p class="text-white">No items in your inventory.</p>`;
       }
-
       inventory.forEach((item, index) => {
         const inventoryItem = document.createElement("div");
         inventoryItem.classList.add("inventory-item");
-
         const itemImage = document.createElement("img");
         itemImage.src = item.imageUrl;
-
         const itemInfo = document.createElement("div");
         itemInfo.classList.add("item-info");
         itemInfo.textContent = item.item;
-
         // Кнопка для удаления предмета
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "Delete";
@@ -210,14 +196,12 @@
             removeItemFromInventory(index);
           }
         };
-
         inventoryItem.appendChild(itemImage);
         inventoryItem.appendChild(itemInfo);
         inventoryItem.appendChild(deleteButton);
         inventoryList.appendChild(inventoryItem);
       });
     }
-
     // Удаление предмета из инвентаря
     function removeItemFromInventory(index) {
       const username = localStorage.getItem("username");
