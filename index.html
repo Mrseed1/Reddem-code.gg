@@ -45,20 +45,23 @@
     .inventory-item .item-info {
       color: white;
     }
+
+    /* Admin Panel Styles */
     .admin-panel {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: rgba(0, 0, 0, 0.8);
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
       color: white;
-      padding: 10px;
-      border-radius: 8px;
-      width: 500px;
       display: none;
       flex-direction: column;
+      padding: 20px;
+      z-index: 1000;
     }
-    .admin-panel h3 {
-      margin-bottom: 10px;
+    .admin-panel h2 {
+      margin-bottom: 20px;
     }
     .admin-panel table {
       width: 100%;
@@ -72,6 +75,30 @@
     }
     .admin-panel th {
       background-color: rgba(255, 255, 255, 0.1);
+    }
+    .admin-panel input[type="text"], .admin-panel input[type="password"] {
+      margin-bottom: 10px;
+      padding: 8px;
+      width: 100%;
+      border: 1px solid white;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    .admin-panel button {
+      padding: 8px 16px;
+      background-color: purple;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .admin-panel button:hover {
+      background-color: darkpurple;
+    }
+    .admin-panel .section {
+      margin-bottom: 20px;
+    }
+    .admin-panel .search-bar {
+      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -92,28 +119,43 @@
     <button onclick="goBackToHome()" class="bg-gray-600 text-white px-4 py-2 rounded-lg mt-4">Back to Home</button>
   </div>
   <p id="message" class="text-white mt-3"></p>
-  <button onclick="goToInventory()" class="bg-green-600 text-white px-4 py-2 rounded-lg mt-3" id="inventoryButton" style="position: absolute; top: 20px; right: 20px; display:none;">Inventory</button>
-
-  <!-- Admin Button -->
   <button onclick="openAdminPanel()" class="bg-red-600 text-white px-4 py-2 rounded-lg" style="position: fixed; bottom: 20px; right: 20px; z-index: 10;">Admin</button>
 
   <!-- Admin Panel -->
   <div id="adminPanel" class="admin-panel">
-    <h3>Admin Panel</h3>
+    <h2>Admin Panel</h2>
     <input type="password" id="adminPassword" class="input-box mb-3" placeholder="Enter Admin Password">
     <button onclick="authenticateAdmin()" class="bg-purple-600 text-white px-4 py-2 rounded-lg">Login</button>
     <div id="adminContent" style="display: none;">
-      <table id="promoUsageTable">
-        <thead>
-          <tr>
-            <th>Promo Code</th>
-            <th>Users Who Used</th>
-          </tr>
-        </thead>
-        <tbody id="promoUsageBody"></tbody>
-      </table>
-      <h4>Registered Users:</h4>
-      <ul id="userList"></ul>
+      <!-- Users Section -->
+      <div class="section">
+        <h3>Users</h3>
+        <input type="text" id="userSearch" class="search-bar" placeholder="Search users..." oninput="filterUsers()">
+        <table id="usersTable">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Codes Section -->
+      <div class="section">
+        <h3>Codes</h3>
+        <table id="codesTable">
+          <thead>
+            <tr>
+              <th>Promo Code</th>
+              <th>Users Who Used</th>
+            </tr>
+          </thead>
+          <tbody id="codesBody"></tbody>
+        </table>
+      </div>
+      <button onclick="closeAdminPanel()">Close</button>
     </div>
   </div>
 
@@ -134,24 +176,25 @@
       document.getElementById("pageTitle").textContent = `${username}'s Inventory`;
       document.getElementById("registerSection").style.display = "none";
       document.getElementById("loginSection").style.display = "block";
-      document.getElementById("inventoryButton").style.display = "block"; // Показать кнопку инвентаря
       document.getElementById("promoCodeSection").style.display = "block"; // Показать форму для кода
     }
 
     // Регистрация пользователя
     function register() {
       const username = prompt("Enter a username to register:");
-      if (username) {
+      if (username && !localStorage.getItem(username)) {
         if (localStorage.getItem("username")) {
           alert("You are already registered!");
         } else {
           localStorage.setItem("username", username);
+          localStorage.setItem(username + "_inventory", JSON.stringify([])); // Создаем пустой инвентарь
           document.getElementById("pageTitle").textContent = `${username}'s Inventory`;
           document.getElementById("registerSection").style.display = "none";
           document.getElementById("loginSection").style.display = "block";
-          document.getElementById("inventoryButton").style.display = "block"; // Показать кнопку инвентаря
           document.getElementById("promoCodeSection").style.display = "block"; // Показать форму для кода
         }
+      } else {
+        alert("Username is already taken or invalid!");
       }
     }
 
@@ -209,7 +252,6 @@
       document.getElementById("loginSection").style.display = "none";
       document.getElementById("registerSection").style.display = "none";
       document.getElementById("inventorySection").style.display = "block";
-      document.getElementById("inventoryButton").style.display = "none"; // скрыть кнопку инвентаря
       displayInventory();
     }
 
@@ -218,23 +260,23 @@
       document.getElementById("inventorySection").style.display = "none";
       document.getElementById("loginSection").style.display = "block";
       document.getElementById("registerSection").style.display = "none";
-      document.getElementById("inventoryButton").style.display = "block"; // показать кнопку инвентаря
-      document.getElementById("promoCodeSection").style.display = "block"; // показать форму для кода
     }
 
     // Добавление предметов в инвентарь
     function addToInventory(item, imageUrl) {
       const username = localStorage.getItem("username");
-      const inventory = JSON.parse(localStorage.getItem(username + "_inventory")) || [];
+      const inventoryKey = username + "_inventory";
+      const inventory = JSON.parse(localStorage.getItem(inventoryKey)) || [];
       inventory.push({ item, imageUrl });
-      localStorage.setItem(username + "_inventory", JSON.stringify(inventory));
+      localStorage.setItem(inventoryKey, JSON.stringify(inventory));
     }
 
     // Отображение инвентаря
     function displayInventory() {
       const inventoryList = document.getElementById("inventoryList");
       const username = localStorage.getItem("username");
-      const inventory = JSON.parse(localStorage.getItem(username + "_inventory")) || [];
+      const inventoryKey = username + "_inventory";
+      const inventory = JSON.parse(localStorage.getItem(inventoryKey)) || [];
       inventoryList.innerHTML = "";
       if (inventory.length === 0) {
         inventoryList.innerHTML = `<p class="text-white">No items in your inventory.</p>`;
@@ -266,16 +308,23 @@
     // Удаление предмета из инвентаря
     function removeItemFromInventory(index) {
       const username = localStorage.getItem("username");
-      const inventory = JSON.parse(localStorage.getItem(username + "_inventory")) || [];
+      const inventoryKey = username + "_inventory";
+      const inventory = JSON.parse(localStorage.getItem(inventoryKey)) || [];
       inventory.splice(index, 1);
-      localStorage.setItem(username + "_inventory", JSON.stringify(inventory));
+      localStorage.setItem(inventoryKey, JSON.stringify(inventory));
       displayInventory();
     }
 
     // Открытие админ-панели
     function openAdminPanel() {
-      const adminPanel = document.getElementById("adminPanel");
-      adminPanel.style.display = "flex";
+      document.body.style.overflow = "hidden"; // Запрет прокрутки основного контента
+      document.getElementById("adminPanel").style.display = "flex";
+    }
+
+    // Закрытие админ-панели
+    function closeAdminPanel() {
+      document.body.style.overflow = "auto"; // Разрешение прокрутки основного контента
+      document.getElementById("adminPanel").style.display = "none";
     }
 
     // Аутентификация администратора
@@ -285,18 +334,75 @@
         document.getElementById("adminContent").style.display = "block";
         document.getElementById("adminPassword").style.display = "none";
         document.querySelector("button[onclick='authenticateAdmin()']").style.display = "none";
-        displayPromoUsageTable();
-        displayUsers();
+        displayUsersTable();
+        displayCodesTable();
       } else {
         alert("Incorrect password!");
       }
     }
 
-    // Отображение таблицы использования промокодов
-    function displayPromoUsageTable() {
+    // Отображение таблицы пользователей
+    function displayUsersTable() {
+      const usersBody = document.getElementById("usersBody");
+      usersBody.innerHTML = "";
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.endsWith("_inventory")) {
+          const oldUsername = key.split("_")[0];
+          const row = document.createElement("tr");
+          const usernameCell = document.createElement("td");
+          usernameCell.textContent = oldUsername;
+          const actionsCell = document.createElement("td");
+          const renameButton = document.createElement("button");
+          renameButton.textContent = "Rename";
+          renameButton.onclick = () => renameUser(oldUsername);
+          actionsCell.appendChild(renameButton);
+          row.appendChild(usernameCell);
+          row.appendChild(actionsCell);
+          usersBody.appendChild(row);
+        }
+      }
+    }
+
+    // Переименование пользователя
+    function renameUser(oldUsername) {
+      const newUsername = prompt(`Enter a new username for "${oldUsername}":`);
+      if (newUsername && newUsername !== oldUsername) {
+        const oldKey = oldUsername + "_inventory";
+        const newKey = newUsername + "_inventory";
+        const inventory = localStorage.getItem(oldKey);
+        localStorage.removeItem(oldKey);
+        localStorage.setItem(newKey, inventory);
+
+        // Обновляем текущий логин пользователя, если он активен
+        if (localStorage.getItem("username") === oldUsername) {
+          localStorage.setItem("username", newUsername);
+          document.getElementById("pageTitle").textContent = `${newUsername}'s Inventory`;
+        }
+
+        displayUsersTable(); // Обновить таблицу
+      }
+    }
+
+    // Фильтрация пользователей по поиску
+    function filterUsers() {
+      const query = document.getElementById("userSearch").value.toLowerCase();
+      const rows = document.querySelectorAll("#usersBody tr");
+      rows.forEach(row => {
+        const username = row.cells[0].textContent.toLowerCase();
+        if (username.includes(query)) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    }
+
+    // Отображение таблицы промокодов
+    function displayCodesTable() {
       const promoUsageLog = JSON.parse(localStorage.getItem("promoUsageLog") || "{}");
-      const promoUsageBody = document.getElementById("promoUsageBody");
-      promoUsageBody.innerHTML = "";
+      const codesBody = document.getElementById("codesBody");
+      codesBody.innerHTML = "";
       for (const [code, users] of Object.entries(promoUsageLog)) {
         const row = document.createElement("tr");
         const codeCell = document.createElement("td");
@@ -305,22 +411,7 @@
         usersCell.textContent = users.join(", ");
         row.appendChild(codeCell);
         row.appendChild(usersCell);
-        promoUsageBody.appendChild(row);
-      }
-    }
-
-    // Отображение списка зарегистированных пользователей
-    function displayUsers() {
-      const userList = document.getElementById("userList");
-      userList.innerHTML = "";
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.endsWith("_inventory")) {
-          const username = key.split("_")[0];
-          const listItem = document.createElement("li");
-          listItem.textContent = username;
-          userList.appendChild(listItem);
-        }
+        codesBody.appendChild(row);
       }
     }
   </script>
